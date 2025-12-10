@@ -1,46 +1,17 @@
 package com.moments.optimizer.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "task_steps")
 public class TaskStep {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "task_id", length = 64, nullable = false)
     private String taskId;
-
-    @Column(name = "step_order", nullable = false)
     private Integer stepOrder;
-
-    @Column(name = "step_key", length = 64, nullable = false)
     private String stepKey;
-
-    @Column(name = "step_label", length = 128, nullable = false)
     private String stepLabel;
-
-    @Column(length = 16, nullable = false)
     private String status;
-
-    @Column(name = "started_at")
     private LocalDateTime startedAt;
-
-    @Column(name = "finished_at")
     private LocalDateTime finishedAt;
-
-    @Lob
-    @Column(name = "extra_json", columnDefinition = "LONGTEXT")
     private String extraJson;
 
     public Long getId() {

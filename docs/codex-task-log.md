@@ -94,3 +94,47 @@
 - Frontend can create tasks, poll progress, display results, and browse history via Spring Boot APIs using a clean layout and reusable UI feedback; ready for further UX polish and auth integration without touching legacy Node.
 
 ---
+
+## [2025-12-10] Task: Maven migration notice
+
+**Context**
+- Backend must use Maven instead of Gradle; add Maven build descriptor and document usage without storing secrets.
+
+**Changes**
+- Added `backend/pom.xml` with Spring Boot 3.2.5, JPA, Web, Flyway (MySQL), MySQL driver, and test dependencies.
+- Updated backend README to use `mvn spring-boot:run`, clarified local secret handling via `application-local.yml`, and noted Gradle files should be ignored/removed manually.
+- Updated `.gitignore` to exclude backend local config and Maven target.
+
+**Impact**
+- Backend now has a Maven build path; users should run Maven and may delete residual Gradle files (`build.gradle`, `settings.gradle`, `gradle/`, `gradlew*`) manually to avoid confusion.
+
+---
+
+## [2025-12-10] Task: Auto-create MySQL database on backend start (configurable)
+
+**Context**
+- Allow backend to ensure the target MySQL database exists at startup without manual pre-creation; keep safety via configuration.
+
+**Changes**
+- Added `moments.db.auto-create` (default true) in `application.yml` and implemented `DatabaseInitializer` to connect to MySQL host/port (no schema change) and run `CREATE DATABASE IF NOT EXISTS` using configured credentials; uses utf8mb4 charset.
+- Updated example/local config expectations; no secrets committed.
+
+**Impact**
+- Backend can verify/create the database automatically during startup when enabled, reducing manual setup steps; behavior is configurable.
+
+---
+
+## [2025-12-10] Task: Switch backend data access to MyBatis (retain Flyway)
+
+**Context**
+- Replace JPA repositories with MyBatis mappers for tasks, task steps, and history while keeping existing Flyway migrations and API contracts intact.
+
+**Changes**
+- Added MyBatis dependency and configuration (`mapper` XMLs, mapper interfaces) with underscore-to-camel mapping and mapper/type-alias settings in `application.yml`.
+- Implemented mappers/XML for tasks, task_steps, and analysis_history; services now use MyBatis for CRUD/status transitions and pagination; JPA starter removed from `pom.xml`.
+- Updated datasource defaults and dev config; kept Flyway unchanged.
+
+**Impact**
+- Backend now uses MyBatis for data access with existing schemas; Flyway migration flow and REST contracts are preserved.
+
+---

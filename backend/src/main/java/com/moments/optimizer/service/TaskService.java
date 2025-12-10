@@ -10,9 +10,8 @@ import com.moments.optimizer.dto.TaskDetailDto;
 import com.moments.optimizer.dto.TaskStepDto;
 import com.moments.optimizer.exception.BadRequestException;
 import com.moments.optimizer.exception.NotFoundException;
-import com.moments.optimizer.repository.TaskRepository;
-import com.moments.optimizer.repository.TaskStepRepository;
-import org.springframework.data.domain.PageRequest;
+import com.moments.optimizer.mapper.TaskMapper;
+import com.moments.optimizer.mapper.TaskStepMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,13 +37,13 @@ public class TaskService {
             new StepTemplate(6, "final_result", "Final result")
     );
 
-    private final TaskRepository taskRepository;
-    private final TaskStepRepository taskStepRepository;
+    private final TaskMapper taskMapper;
+    private final TaskStepMapper taskStepMapper;
     private final ObjectMapper objectMapper;
 
-    public TaskService(TaskRepository taskRepository, TaskStepRepository taskStepRepository, ObjectMapper objectMapper) {
-        this.taskRepository = taskRepository;
-        this.taskStepRepository = taskStepRepository;
+    public TaskService(TaskMapper taskMapper, TaskStepMapper taskStepMapper, ObjectMapper objectMapper) {
+        this.taskMapper = taskMapper;
+        this.taskStepMapper = taskStepMapper;
         this.objectMapper = objectMapper;
     }
 
@@ -67,7 +66,7 @@ public class TaskService {
         task.setPayloadJson(serializePayload(request));
         task.setCreatedAt(now);
         task.setUpdatedAt(now);
-        taskRepository.save(task);
+        taskMapper.insertTask(task);
 
         List<TaskStep> steps = new ArrayList<>();
         for (StepTemplate template : DEFAULT_STEPS) {
@@ -79,101 +78,101 @@ public class TaskService {
             step.setStatus("PENDING");
             steps.add(step);
         }
-        taskStepRepository.saveAll(steps);
+        taskStepMapper.insertSteps(steps);
 
-        return toDetailDto(task, taskStepRepository.findByTaskIdOrderByStepOrderAsc(taskId));
+        return toDetailDto(task, taskStepMapper.selectByTaskId(taskId));
     }
 
     @Transactional(readOnly = true)
     public TaskDetailDto getTask(String taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found"));
+        Task task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found");
+        }
         validateStatus(task.getStatus());
-        List<TaskStep> steps = taskStepRepository.findByTaskIdOrderByStepOrderAsc(taskId);
+        List<TaskStep> steps = taskStepMapper.selectByTaskId(taskId);
         steps.forEach(step -> validateStatus(step.getStatus()));
         return toDetailDto(task, steps);
     }
 
     @Transactional(readOnly = true)
     public List<Task> findRunnableTasks(int limit) {
-        PageRequest pageRequest = PageRequest.of(0, Math.max(1, limit));
-        return taskRepository.findByStatusInOrderByCreatedAtAsc(
-                        List.of("PENDING", "RUNNING"), pageRequest)
-                .getContent();
+        return taskMapper.selectRunnableTasks(Math.max(1, limit));
     }
 
     @Transactional
     public Task markTaskRunning(String taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found"));
+        Task task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found");
+        }
         if (!"PENDING".equals(task.getStatus()) && !"RUNNING".equals(task.getStatus())) {
             throw new BadRequestException(ErrorCodes.VALIDATION_ERROR, "Task not runnable");
         }
+        LocalDateTime now = LocalDateTime.now();
         task.setStatus("RUNNING");
-        task.setUpdatedAt(LocalDateTime.now());
-        return taskRepository.save(task);
+        task.setUpdatedAt(now);
+        taskMapper.updateStatus(taskId, "RUNNING", task.getErrorMessage(), now, task.getResultJson());
+        return taskMapper.selectById(taskId);
     }
 
     @Transactional
     public TaskStep markFirstStepRunning(String taskId) {
-        List<TaskStep> steps = taskStepRepository.findByTaskIdOrderByStepOrderAsc(taskId);
-        TaskStep firstPending = steps.stream()
-                .filter(s -> "PENDING".equals(s.getStatus()))
-                .findFirst()
-                .orElse(null);
+        TaskStep firstPending = taskStepMapper.selectFirstPendingStep(taskId);
         if (firstPending == null) {
             return null;
         }
         firstPending.setStatus("RUNNING");
         firstPending.setStartedAt(LocalDateTime.now());
-        return taskStepRepository.save(firstPending);
+        taskStepMapper.updateStepStatus(firstPending.getId(), "RUNNING", firstPending.getStartedAt(), null);
+        return taskStepMapper.selectFirstPendingStep(taskId) == null ? firstPending : firstPending;
     }
 
     @Transactional(readOnly = true)
     public TaskStep getNextPendingStep(String taskId) {
-        List<TaskStep> steps = taskStepRepository.findByTaskIdOrderByStepOrderAsc(taskId);
-        return steps.stream()
-                .filter(s -> "PENDING".equals(s.getStatus()))
-                .findFirst()
-                .orElse(null);
+        return taskStepMapper.selectFirstPendingStep(taskId);
     }
 
     @Transactional
     public TaskStep markStepSuccess(Long stepId) {
-        TaskStep step = taskStepRepository.findById(stepId)
-                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Step not found"));
+        TaskStep step = findStepById(stepId);
+        LocalDateTime now = LocalDateTime.now();
+        taskStepMapper.updateStepStatus(stepId, "SUCCESS", step.getStartedAt(), now);
         step.setStatus("SUCCESS");
-        step.setFinishedAt(LocalDateTime.now());
-        return taskStepRepository.save(step);
+        step.setFinishedAt(now);
+        return step;
     }
 
     @Transactional
     public TaskStep markStepFailed(Long stepId, String errorMessage) {
-        TaskStep step = taskStepRepository.findById(stepId)
-                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Step not found"));
+        TaskStep step = findStepById(stepId);
+        LocalDateTime now = LocalDateTime.now();
+        taskStepMapper.updateStepStatus(stepId, "FAILED", step.getStartedAt(), now);
         step.setStatus("FAILED");
-        step.setFinishedAt(LocalDateTime.now());
-        return taskStepRepository.save(step);
+        step.setFinishedAt(now);
+        return step;
     }
 
     @Transactional
     public Task markTaskSuccess(String taskId, Map<String, Object> result) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found"));
+        Task task = requireTask(taskId);
+        LocalDateTime now = LocalDateTime.now();
+        taskMapper.updateStatus(taskId, "SUCCESS", task.getErrorMessage(), now, writeJson(result));
         task.setStatus("SUCCESS");
         task.setResultJson(writeJson(result));
-        task.setUpdatedAt(LocalDateTime.now());
-        return taskRepository.save(task);
+        task.setUpdatedAt(now);
+        return task;
     }
 
     @Transactional
     public Task markTaskFailed(String taskId, String errorMessage) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found"));
+        Task task = requireTask(taskId);
+        LocalDateTime now = LocalDateTime.now();
+        taskMapper.updateStatus(taskId, "FAILED", errorMessage, now, task.getResultJson());
         task.setStatus("FAILED");
         task.setErrorMessage(errorMessage);
-        task.setUpdatedAt(LocalDateTime.now());
-        return taskRepository.save(task);
+        task.setUpdatedAt(now);
+        return task;
     }
 
     private void validateStatus(String status) {
@@ -240,6 +239,22 @@ public class TaskService {
         } catch (JsonProcessingException e) {
             throw new BadRequestException(ErrorCodes.VALIDATION_ERROR, "Invalid result");
         }
+    }
+
+    private Task requireTask(String taskId) {
+        Task task = taskMapper.selectById(taskId);
+        if (task == null) {
+            throw new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found");
+        }
+        return task;
+    }
+
+    private TaskStep findStepById(Long stepId) {
+        TaskStep step = taskStepMapper.selectById(stepId);
+        if (step == null) {
+            throw new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Step not found");
+        }
+        return step;
     }
 
     private record StepTemplate(int order, String key, String label) {}

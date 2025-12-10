@@ -1,0 +1,5 @@
+backend/src/main/resources/application-local.yml
+.DS_Store
+node_modules
+frontend/dist
+backend/target

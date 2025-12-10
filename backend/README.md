@@ -50,7 +50,7 @@ mvn spring-boot:run
   ```yaml
   spring:
     datasource:
-      url: jdbc:mysql://localhost:3306/moments_optimizer?useSSL=false&serverTimezone=UTC&characterEncoding=utf8mb4
+      url: jdbc:mysql://localhost:3306/moments_optimizer?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
       username: root
       password: .Wellrainadmin123
   ```

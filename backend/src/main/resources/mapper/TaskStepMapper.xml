@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.moments.optimizer.mapper.TaskStepMapper">
+
+    <resultMap id="TaskStepResultMap" type="com.moments.optimizer.domain.TaskStep">
+        <id property="id" column="id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="stepOrder" column="step_order"/>
+        <result property="stepKey" column="step_key"/>
+        <result property="stepLabel" column="step_label"/>
+        <result property="status" column="status"/>
+        <result property="startedAt" column="started_at"/>
+        <result property="finishedAt" column="finished_at"/>
+        <result property="extraJson" column="extra_json"/>
+    </resultMap>
+
+    <insert id="insertSteps">
+        INSERT INTO task_steps (task_id, step_order, step_key, step_label, status, started_at, finished_at, extra_json)
+        VALUES
+        <foreach collection="steps" item="item" separator=",">
+            (#{item.taskId}, #{item.stepOrder}, #{item.stepKey}, #{item.stepLabel}, #{item.status},
+             #{item.startedAt}, #{item.finishedAt}, #{item.extraJson})
+        </foreach>
+    </insert>
+
+    <select id="selectByTaskId" parameterType="string" resultMap="TaskStepResultMap">
+        SELECT id, task_id, step_order, step_key, step_label, status, started_at, finished_at, extra_json
+        FROM task_steps
+        WHERE task_id = #{taskId}
+        ORDER BY step_order ASC
+    </select>
+
+    <select id="selectFirstPendingStep" parameterType="string" resultMap="TaskStepResultMap">
+        SELECT id, task_id, step_order, step_key, step_label, status, started_at, finished_at, extra_json
+        FROM task_steps
+        WHERE task_id = #{taskId} AND status = 'PENDING'
+        ORDER BY step_order ASC
+        LIMIT 1
+    </select>
+
+    <select id="selectById" parameterType="long" resultMap="TaskStepResultMap">
+        SELECT id, task_id, step_order, step_key, step_label, status, started_at, finished_at, extra_json
+        FROM task_steps
+        WHERE id = #{id}
+    </select>
+
+    <update id="updateStepStatus">
+        UPDATE task_steps
+        SET status = #{status},
+            started_at = COALESCE(#{startedAt}, started_at),
+            finished_at = COALESCE(#{finishedAt}, finished_at)
+        WHERE id = #{id}
+    </update>
+
+</mapper>

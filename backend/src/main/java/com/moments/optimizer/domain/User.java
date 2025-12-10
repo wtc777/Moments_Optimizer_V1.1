@@ -1,39 +1,16 @@
 package com.moments.optimizer.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "users")
 public class User {
 
-    @Id
-    @Column(length = 64)
     private String id;
-
-    @Column(length = 32, nullable = false, unique = true)
     private String phone;
-
-    @Column(length = 128, nullable = false)
     private String nickname;
-
-    @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
-
-    @Column(length = 32, nullable = false)
     private String role = "normal";
-
-    @Column(nullable = false)
     private Integer credits = 5;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     public String getId() {

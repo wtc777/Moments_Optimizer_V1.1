@@ -1,42 +1,16 @@
 package com.moments.optimizer.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "tasks")
 public class Task {
 
-    @Id
-    @Column(length = 64)
     private String id;
-
-    @Column(length = 64, nullable = false)
     private String type;
-
-    @Column(length = 16, nullable = false)
     private String status;
-
-    @Lob
-    @Column(name = "payload_json", columnDefinition = "LONGTEXT")
     private String payloadJson;
-
-    @Lob
-    @Column(name = "result_json", columnDefinition = "LONGTEXT")
     private String resultJson;
-
-    @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     public String getId() {

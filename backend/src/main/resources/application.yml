@@ -1,10 +1,11 @@
 spring:
   application:
     name: moments-optimizer-backend
-  profiles:
-    active: dev
-  config:
-    import: optional:classpath:application-local.yml
+  datasource:
+    url: jdbc:mysql://localhost:3306/moments_optimizer?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: moments
+    password: Wellrainadmin123
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 server:
   port: 8080
@@ -18,3 +19,12 @@ moments:
     auth-header: ""
     auth-token: ""
     timeout-ms: 5000
+  db:
+    auto-create: true
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.moments.optimizer.domain
+  configuration:
+    map-underscore-to-camel-case: true
+    

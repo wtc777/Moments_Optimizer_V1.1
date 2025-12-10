@@ -6,9 +6,7 @@ import com.moments.optimizer.dto.HistoryDetailDto;
 import com.moments.optimizer.dto.HistorySummaryDto;
 import com.moments.optimizer.exception.BadRequestException;
 import com.moments.optimizer.exception.NotFoundException;
-import com.moments.optimizer.repository.AnalysisHistoryRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import com.moments.optimizer.mapper.AnalysisHistoryMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +16,10 @@ import java.util.stream.Collectors;
 @Service
 public class HistoryService {
 
-    private final AnalysisHistoryRepository historyRepository;
+    private final AnalysisHistoryMapper historyMapper;
 
-    public HistoryService(AnalysisHistoryRepository historyRepository) {
-        this.historyRepository = historyRepository;
+    public HistoryService(AnalysisHistoryMapper historyMapper) {
+        this.historyMapper = historyMapper;
     }
 
     @Transactional(readOnly = true)
@@ -31,18 +29,19 @@ public class HistoryService {
         }
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
-        PageRequest pageable = PageRequest.of(safePage, safeSize);
-        Page<AnalysisHistory> historyPage = historyRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
-        List<HistorySummaryDto> items = historyPage.getContent().stream()
-                .map(this::toSummary)
-                .collect(Collectors.toList());
-        return new HistoryPage(items, historyPage.getNumber(), historyPage.getSize(), historyPage.getTotalElements());
+        int offset = safePage * safeSize;
+        List<AnalysisHistory> rows = historyMapper.selectPageByUser(userId, offset, safeSize);
+        long total = historyMapper.countByUser(userId);
+        List<HistorySummaryDto> items = rows.stream().map(this::toSummary).collect(Collectors.toList());
+        return new HistoryPage(items, safePage, safeSize, total);
     }
 
     @Transactional(readOnly = true)
     public HistoryDetailDto getHistory(String id) {
-        AnalysisHistory history = historyRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrorCodes.HISTORY_NOT_FOUND, "History not found"));
+        AnalysisHistory history = historyMapper.selectById(id);
+        if (history == null) {
+            throw new NotFoundException(ErrorCodes.HISTORY_NOT_FOUND, "History not found");
+        }
         return toDetail(history);
     }
 

@@ -1,30 +1,13 @@
 package com.moments.optimizer.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "analysis_logs")
 public class AnalysisLog {
 
-    @Id
-    @Column(length = 64)
     private String id;
-
-    @Column(name = "user_id", length = 64, nullable = false)
     private String userId;
-
-    @Column(length = 64, nullable = false)
     private String type;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "duration_ms")
     private Integer durationMs;
 
     public String getId() {

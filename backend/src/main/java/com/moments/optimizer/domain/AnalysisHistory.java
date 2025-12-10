@@ -1,57 +1,21 @@
 package com.moments.optimizer.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
-
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "analysis_history")
 public class AnalysisHistory {
 
-    @Id
-    @Column(length = 64)
     private String id;
-
-    @Column(name = "user_id", length = 64, nullable = false)
     private String userId;
-
-    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "image_path", columnDefinition = "TEXT")
     private String imagePath;
-
-    @Lob
-    @Column(name = "input_text", columnDefinition = "LONGTEXT")
     private String inputText;
-
-    @Lob
-    @Column(name = "output_text", columnDefinition = "LONGTEXT")
     private String outputText;
-
-    @Column(name = "duration_ms")
     private Integer durationMs;
-
-    @Column(name = "input_tokens")
     private Integer inputTokens;
-
-    @Column(name = "output_tokens")
     private Integer outputTokens;
-
-    @Column(name = "total_tokens")
     private Integer totalTokens;
-
-    @Column(name = "model_name", length = 128)
     private String modelName;
-
-    @Column(name = "success", nullable = false)
     private Boolean success = true;
-
-    @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
     public String getId() {
