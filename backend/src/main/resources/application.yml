@@ -3,6 +3,8 @@ spring:
     name: moments-optimizer-backend
   profiles:
     active: dev
+  config:
+    import: optional:classpath:application-local.yml
 
 server:
   port: 8080
