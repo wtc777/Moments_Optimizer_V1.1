@@ -12,6 +12,7 @@ import com.moments.optimizer.exception.BadRequestException;
 import com.moments.optimizer.exception.NotFoundException;
 import com.moments.optimizer.repository.TaskRepository;
 import com.moments.optimizer.repository.TaskStepRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -93,6 +94,88 @@ public class TaskService {
         return toDetailDto(task, steps);
     }
 
+    @Transactional(readOnly = true)
+    public List<Task> findRunnableTasks(int limit) {
+        PageRequest pageRequest = PageRequest.of(0, Math.max(1, limit));
+        return taskRepository.findByStatusInOrderByCreatedAtAsc(
+                        List.of("PENDING", "RUNNING"), pageRequest)
+                .getContent();
+    }
+
+    @Transactional
+    public Task markTaskRunning(String taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found"));
+        if (!"PENDING".equals(task.getStatus()) && !"RUNNING".equals(task.getStatus())) {
+            throw new BadRequestException(ErrorCodes.VALIDATION_ERROR, "Task not runnable");
+        }
+        task.setStatus("RUNNING");
+        task.setUpdatedAt(LocalDateTime.now());
+        return taskRepository.save(task);
+    }
+
+    @Transactional
+    public TaskStep markFirstStepRunning(String taskId) {
+        List<TaskStep> steps = taskStepRepository.findByTaskIdOrderByStepOrderAsc(taskId);
+        TaskStep firstPending = steps.stream()
+                .filter(s -> "PENDING".equals(s.getStatus()))
+                .findFirst()
+                .orElse(null);
+        if (firstPending == null) {
+            return null;
+        }
+        firstPending.setStatus("RUNNING");
+        firstPending.setStartedAt(LocalDateTime.now());
+        return taskStepRepository.save(firstPending);
+    }
+
+    @Transactional(readOnly = true)
+    public TaskStep getNextPendingStep(String taskId) {
+        List<TaskStep> steps = taskStepRepository.findByTaskIdOrderByStepOrderAsc(taskId);
+        return steps.stream()
+                .filter(s -> "PENDING".equals(s.getStatus()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Transactional
+    public TaskStep markStepSuccess(Long stepId) {
+        TaskStep step = taskStepRepository.findById(stepId)
+                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Step not found"));
+        step.setStatus("SUCCESS");
+        step.setFinishedAt(LocalDateTime.now());
+        return taskStepRepository.save(step);
+    }
+
+    @Transactional
+    public TaskStep markStepFailed(Long stepId, String errorMessage) {
+        TaskStep step = taskStepRepository.findById(stepId)
+                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Step not found"));
+        step.setStatus("FAILED");
+        step.setFinishedAt(LocalDateTime.now());
+        return taskStepRepository.save(step);
+    }
+
+    @Transactional
+    public Task markTaskSuccess(String taskId, Map<String, Object> result) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found"));
+        task.setStatus("SUCCESS");
+        task.setResultJson(writeJson(result));
+        task.setUpdatedAt(LocalDateTime.now());
+        return taskRepository.save(task);
+    }
+
+    @Transactional
+    public Task markTaskFailed(String taskId, String errorMessage) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new NotFoundException(ErrorCodes.TASK_NOT_FOUND, "Task not found"));
+        task.setStatus("FAILED");
+        task.setErrorMessage(errorMessage);
+        task.setUpdatedAt(LocalDateTime.now());
+        return taskRepository.save(task);
+    }
+
     private void validateStatus(String status) {
         if (!ALLOWED_STATUS.contains(status)) {
             throw new BadRequestException(ErrorCodes.VALIDATION_ERROR, "Invalid status value");
@@ -145,6 +228,17 @@ public class TaskService {
             return objectMapper.readValue(json, Map.class);
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private String writeJson(Map<String, Object> data) {
+        if (data == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            throw new BadRequestException(ErrorCodes.VALIDATION_ERROR, "Invalid result");
         }
     }
 

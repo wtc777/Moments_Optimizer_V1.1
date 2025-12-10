@@ -6,3 +6,13 @@ spring:
 
 server:
   port: 8080
+
+moments:
+  worker:
+    enabled: true
+  model:
+    client-type: stub
+    base-url: ""
+    auth-header: ""
+    auth-token: ""
+    timeout-ms: 5000

@@ -1,0 +1,58 @@
+{
+  "home.title": "Moments Optimizer",
+  "home.subtitle": "Create a new optimization task and track progress.",
+  "home.createSection": "Create Task",
+  "home.viewHistory": "View history",
+
+  "taskForm.userId": "User ID",
+  "taskForm.userIdPlaceholder": "Enter user ID",
+  "taskForm.type": "Task type",
+  "taskForm.inputText": "Input text",
+  "taskForm.inputTextPlaceholder": "Describe your moment...",
+  "taskForm.imageUrls": "Image URLs (optional)",
+  "taskForm.imageUrlsPlaceholder": "Comma-separated URLs",
+  "taskForm.imageUrlsHint": "Separate multiple URLs with commas.",
+  "taskForm.createTask": "Create Task",
+  "taskForm.creating": "Creating...",
+  "taskForm.loadingLabel": "Creating task...",
+
+  "taskSteps.title": "Steps",
+  "taskSteps.status": "Status",
+  "taskSteps.startedAt": "Started",
+  "taskSteps.finishedAt": "Finished",
+
+  "taskResult.title": "Result",
+
+  "taskDetail.title": "Task Detail",
+  "taskDetail.taskId": "Task ID",
+  "taskDetail.status": "Status",
+  "taskDetail.loading": "Loading task...",
+
+  "historyList.title": "History",
+  "historyList.subtitle": "View your previous analysis tasks.",
+  "historyList.userId": "User ID",
+  "historyList.userIdPlaceholder": "Enter user ID",
+  "historyList.userIdRequired": "User ID is required.",
+  "historyList.load": "Load",
+  "historyList.loading": "Loading history...",
+  "historyList.empty": "No history yet.",
+  "historyList.prev": "Previous",
+  "historyList.next": "Next",
+  "historyList.pageLabel": "Page {page} / {total}",
+
+  "historyItem.noInput": "No input text",
+  "historyItem.success": "Success",
+  "historyItem.failed": "Failed",
+
+  "historyDetail.title": "History Detail",
+  "historyDetail.recordId": "Record ID",
+  "historyDetail.loading": "Loading record...",
+  "historyDetail.inputText": "Input Text",
+  "historyDetail.outputText": "Output Text",
+  "historyDetail.model": "Model",
+  "historyDetail.duration": "Duration",
+  "historyDetail.tokens": "Tokens",
+  "historyDetail.status": "Status",
+  "historyDetail.success": "Success",
+  "historyDetail.failed": "Failed"
+}
